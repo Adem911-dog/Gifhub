@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GIFhub - Plateforme YouTube de GIFs</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        hub: {
+                            orange: '#FF9900',
+                            dark: '#0f0f0f',
+                            card: '#1f1f1f',
+                            hover: '#272727',
+                            border: '#3f3f3f',
+                            muted: '#aaaaaa'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Roboto', 'Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons and Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            background-color: #0f0f0f;
+            color: #f1f1f1;
+            font-family: 'Roboto', sans-serif;
+            overflow-x: hidden;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f0f0f;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3f3f3f;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555555;
+        }
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body class="bg-hub-dark text-white min-h-screen flex flex-col select-none">
+
+    <header class="fixed top-0 left-0 right-0 h-14 bg-hub-dark/95 backdrop-blur-md z-50 flex items-center justify-between px-3 md:px-5 border-b border-hub-border/40">
+        <!-- Sidebar Menu Toggle & Official GIFhub Logo -->
+        <div class="flex items-center space-x-3 md:space-x-4">
+            <button onclick="toggleSidebar()" class="p-2 hover:bg-hub-hover rounded-full transition text-white" title="Menu principal">
+                <i class="fa-solid fa-bars text-lg"></i>
+            </button>
+            
+            <!-- GIFhub Custom Logo -->
+            <div onclick="showHomeView()" class="flex items-center tracking-tighter cursor-pointer group py-1 select-none">
+                <span class="text-white font-black text-2xl md:text-3xl tracking-tighter leading-none group-hover:opacity-90 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">gif</span>
+                <span class="bg-hub-orange text-black font-black text-xl md:text-2xl px-2 py-0.5 rounded-xl tracking-tight leading-none ml-1 group-hover:scale-105 transition-transform shadow-lg">hub</span>
+            </div>
+        </div>
+
+        <div class="hidden sm:flex items-center flex-1 max-w-2xl mx-4 md:mx-8">
+            <div class="flex flex-1 items-center bg-[#121212] border border-hub-border rounded-l-full overflow-hidden focus-within:border-hub-orange px-3 py-1.5 transition-colors">
+                <input id="search-input" type="text" placeholder="Rechercher parmi les 35 GIFs, mots-clés, créateurs..." 
+                       class="w-full bg-transparent outline-none text-sm text-white placeholder-hub-muted px-2"
+                       onkeyup="handleSearchInput(event)">
+                <button id="clear-search-btn" onclick="clearSearch()" class="text-hub-muted hover:text-white hidden px-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <button onclick="triggerSearch()" class="bg-[#222222] border border-l-0 border-hub-border hover:bg-hub-hover px-5 py-2 rounded-r-full text-white transition flex items-center justify-center">
+                <i class="fa-solid fa-magnifying-glass text-sm"></i>
+            </button>
+        </div>
+
+        <div class="flex items-center space-x-2 md:space-x-3">
+            <button onclick="openAddModal()" class="flex items-center space-x-2 bg-hub-orange hover:bg-amber-500 text-black font-bold px-3.5 py-1.5 rounded-full text-xs md:text-sm transition shadow-lg hover:scale-105 active:scale-95">
+                <i class="fa-solid fa-plus font-black"></i>
+                <span class="hidden md:inline">Ajouter GIF</span>
+            </button>
+
+            <!-- User Auth Profile Controls -->
+            <div id="auth-buttons-container">
+                <button onclick="openAuthModal('login')" class="flex items-center space-x-2 border border-hub-border hover:bg-hub-hover text-hub-orange font-bold px-3 py-1.5 rounded-full text-xs transition">
+                    <i class="fa-regular fa-user"></i>
+                    <span>Connexion</span>
+                </button>
+            </div>
+
+            <div id="user-profile-container" class="hidden relative">
+                <button onclick="toggleUserMenu()" class="w-9 h-9 rounded-full bg-gradient-to-tr from-hub-orange to-amber-200 text-black font-extrabold text-sm flex items-center justify-center shadow border border-white/20 overflow-hidden">
+                    <span id="user-avatar-text">U</span>
+                </button>
+                <div id="user-dropdown" class="hidden absolute right-0 top-11 w-52 bg-hub-card border border-hub-border rounded-2xl shadow-2xl py-2 z-50">
+                    <div class="px-4 py-2 border-b border-hub-border/50">
+                        <p id="dropdown-username" class="font-bold text-sm text-white truncate">Utilisateur</p>
+                        <p id="dropdown-email" class="text-[10px] text-hub-muted truncate">compte@gifhub.com</p>
+                    </div>
+                    <button onclick="showCategory('favorites')" class="w-full text-left px-4 py-2.5 text-xs hover:bg-hub-hover flex items-center space-x-2 transition">
+                        <i class="fa-solid fa-heart text-red-500"></i>
+                        <span>Mes Favoris (<span id="fav-count-badge">0</span>)</span>
+                    </button>
+                    <button onclick="showCategory('mygifs')" class="w-full text-left px-4 py-2.5 text-xs hover:bg-hub-hover flex items-center space-x-2 transition">
+                        <i class="fa-solid fa-folder-plus text-hub-orange"></i>
+                        <span>Mes GIFs Ajoutés</span>
+                    </button>
+                    <div class="my-1 border-t border-hub-border/50"></div>
+                    <button onclick="logoutUser()" class="w-full text-left px-4 py-2 text-xs text-red-400 hover:bg-hub-hover flex items-center space-x-2 transition">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span>Déconnexion</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex pt-14 flex-1 relative">
+
+        <!-- Collapsible Navigation Sidebar -->
+        <aside id="main-sidebar" class="w-56 shrink-0 bg-hub-dark border-r border-hub-border/30 fixed left-0 top-14 bottom-0 z-40 flex flex-col justify-between py-3 overflow-y-auto transition-all duration-300">
+            <div class="space-y-1 px-2">
+                <button onclick="showHomeView()" id="nav-home" class="w-full flex items-center space-x-4 px-3 py-2.5 rounded-xl bg-hub-hover font-bold text-white text-sm transition">
+                    <i class="fa-solid fa-house text-lg w-6 text-center text-hub-orange"></i>
+                    <span>Accueil</span>
+                </button>
+                <button onclick="showCategory('favorites')" class="w-full flex items-center space-x-4 px-3 py-2.5 rounded-xl hover:bg-hub-hover text-hub-muted hover:text-white text-sm transition">
+                    <i class="fa-solid fa-heart text-lg w-6 text-center text-red-500"></i>
+                    <span>Favoris</span>
+                </button>
+
+                <div class="my-3 border-t border-hub-border/40"></div>
+                <div class="px-3 py-1 text-[11px] font-bold text-hub-muted uppercase tracking-wider">Catégories</div>
+
+                <button onclick="showCategory('discord')" class="w-full flex items-center space-x-4 px-3 py-2 rounded-xl hover:bg-hub-hover text-hub-muted hover:text-white text-sm transition">
+                    <i class="fa-brands fa-discord text-lg w-6 text-center text-indigo-400"></i>
+                    <span>Discord CDN</span>
+                </button>
+                <button onclick="showCategory('cougarillo')" class="w-full flex items-center space-x-4 px-3 py-2 rounded-xl hover:bg-hub-hover text-hub-muted hover:text-white text-sm transition">
+                    <i class="fa-solid fa-fire text-lg w-6 text-center text-amber-500"></i>
+                    <span>Cougarillo</span>
+                </button>
+                <button onclick="showCategory('redgifs')" class="w-full flex items-center space-x-4 px-3 py-2 rounded-xl hover:bg-hub-hover text-hub-muted hover:text-white text-sm transition">
+                    <i class="fa-solid fa-film text-lg w-6 text-center text-pink-500"></i>
+                    <span>RedGifs</span>
+                </button>
+                <button onclick="showCategory('mygifs')" class="w-full flex items-center space-x-4 px-3 py-2 rounded-xl hover:bg-hub-hover text-hub-muted hover:text-white text-sm transition">
+                    <i class="fa-solid fa-folder-plus text-lg w-6 text-center text-hub-orange"></i>
+                    <span>Mes GIFs</span>
+                </button>
+
+                <div class="my-3 border-t border-hub-border/40"></div>
+                <div class="px-3 py-1 text-[11px] font-bold text-hub-muted uppercase tracking-wider">Bibliothèque</div>
+                <button onclick="openAuthModal('login')" class="w-full flex items-center space-x-4 px-3 py-2 rounded-xl hover:bg-hub-hover text-hub-muted hover:text-white text-sm transition">
+                    <i class="fa-solid fa-user-gear text-lg w-6 text-center"></i>
+                    <span>Mon Compte</span>
+                </button>
+                <button onclick="openAddModal()" class="w-full flex items-center space-x-4 px-3 py-2 rounded-xl hover:bg-hub-hover text-hub-muted hover:text-white text-sm transition">
+                    <i class="fa-solid fa-square-plus text-lg w-6 text-center text-hub-orange"></i>
+                    <span>Proposer un GIF</span>
+                </button>
+            </div>
+
+            <div class="px-4 py-3 text-[11px] text-hub-muted/60 border-t border-hub-border/30">
+                <p>© 2026 GIFhub, Inc.</p>
+                <p class="text-[10px] text-hub-orange mt-0.5 font-bold">Plateforme de GIFs Réseau</p>
+            </div>
+        </aside>
+
+        <main id="main-content" class="flex-1 ml-56 transition-all duration-300 p-4 md:p-6 min-w-0">
+
+            <!-- HOME VIEW SECTION -->
+            <section id="home-view" class="space-y-6 animate-fade-in">
+
+                <!-- Filter Chips Row -->
+                <div class="flex items-center space-x-2 overflow-x-auto no-scrollbar pb-2 pt-1 border-b border-hub-border/30">
+                    <button onclick="filterCategory('all')" id="chip-all" class="bg-white text-black px-3.5 py-1.5 rounded-lg text-xs font-bold shrink-0 transition">
+                        Tous (35+)
+                    </button>
+                    <button onclick="filterCategory('favorites')" id="chip-favorites" class="bg-[#222222] hover:bg-hub-hover text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition">
+                        <i class="fa-solid fa-heart mr-1 text-red-500"></i> Favoris
+                    </button>
+                    <button onclick="filterCategory('discord')" id="chip-discord" class="bg-[#222222] hover:bg-hub-hover text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition">
+                        <i class="fa-brands fa-discord mr-1 text-indigo-400"></i> Discord CDN
+                    </button>
+                    <button onclick="filterCategory('cougarillo')" id="chip-cougarillo" class="bg-[#222222] hover:bg-hub-hover text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition">
+                        <i class="fa-solid fa-fire mr-1 text-amber-500"></i> Cougarillo
+                    </button>
+                    <button onclick="filterCategory('redgifs')" id="chip-redgifs" class="bg-[#222222] hover:bg-hub-hover text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition">
+                        <i class="fa-solid fa-film mr-1 text-pink-500"></i> RedGifs
+                    </button>
+                    <button onclick="filterCategory('mygifs')" id="chip-mygifs" class="bg-[#222222] hover:bg-hub-hover text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition">
+                        <i class="fa-solid fa-user-gear mr-1 text-hub-orange"></i> Mes GIFs
+                    </button>
+                </div>
+
+                <div id="home-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-7">
+                    <!-- Populated dynamically via JS -->
+                </div>
+
+                <!-- Empty State Banner -->
+                <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 text-center space-y-4">
+                    <div class="w-20 h-20 rounded-full bg-hub-card border border-hub-border flex items-center justify-center text-3xl text-hub-muted">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white">Aucun GIF correspondant</h3>
+                    <p class="text-sm text-hub-muted max-w-sm">Ajustez votre recherche ou ajoutez votre propre lien de GIF.</p>
+                    <button onclick="openAddModal()" class="bg-hub-orange text-black font-bold text-xs px-4 py-2 rounded-full shadow hover:bg-amber-500 transition">
+                        + Ajouter un GIF
+                    </button>
+                </div>
+
+            </section>
+
+            <section id="watch-view" class="hidden space-y-6 animate-fade-in">
+                
+                <div class="flex items-center justify-between">
+                    <button onclick="showHomeView()" class="flex items-center space-x-2 text-hub-muted hover:text-white text-sm font-semibold transition px-3 py-1.5 rounded-xl bg-hub-card hover:bg-hub-hover border border-hub-border/50">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Retour à l'accueil</span>
+                    </button>
+                    <div class="text-xs text-hub-muted font-mono" id="current-gif-id-tag">ID: gif-1</div>
+                </div>
+
+                <div class="flex flex-col lg:flex-row gap-6">
+                    
+                    <!-- Player Main Column -->
+                    <div class="flex-1 min-w-0">
+                        
+                        <div id="player-container" class="relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-hub-border group flex items-center justify-center">
+                            
+                            <!-- Video/GIF Element -->
+                            <img id="main-gif-element" src="" alt="GIF Player" class="max-h-full max-w-full object-contain transition-opacity duration-200">
+                            <iframe id="main-iframe-element" src="" class="hidden w-full h-full border-0" allowfullscreen></iframe>
+                            <canvas id="pause-canvas" class="hidden absolute inset-0 max-h-full max-w-full m-auto object-contain"></canvas>
+
+                            <!-- Error Fallback Overlay -->
+                            <div id="player-error" class="absolute inset-0 bg-hub-card/95 flex flex-col items-center justify-center p-6 text-center space-y-3 hidden z-20">
+                                <div class="w-16 h-16 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center text-3xl">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                </div>
+                                <h3 class="text-lg font-bold text-white">Lien de vidéo expiré ou indisponible</h3>
+                                <p class="text-xs text-hub-muted max-w-sm">Le serveur distant a bloqué l'accès direct. Mettez à jour le lien de ce GIF pour le rétablir.</p>
+                                <button onclick="openRepairModal()" class="bg-hub-orange text-black font-bold text-xs px-4 py-2.5 rounded-full transition shadow flex items-center space-x-2 hover:bg-amber-500">
+                                    <i class="fa-solid fa-wrench"></i>
+                                    <span>Remplacer l'URL du GIF</span>
+                                </button>
+                            </div>
+
+                            <div id="player-controls-overlay" class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-4 pointer-events-none z-10">
+                                
+                                <div class="flex justify-between items-center pointer-events-auto">
+                                    <span id="player-badge" class="bg-hub-orange text-black text-xs font-extrabold px-2.5 py-1 rounded-md tracking-wider flex items-center space-x-1 shadow">
+                                        <i class="fa-solid fa-play-circle"></i>
+                                        <span id="badge-text">GIF PLAYER</span>
+                                    </span>
+                                    <div class="flex items-center space-x-2">
+                                        <button onclick="cycleSpeed()" id="speed-btn" class="bg-black/70 hover:bg-white/20 text-white text-xs px-2.5 py-1 rounded-md backdrop-blur transition flex items-center space-x-1 font-mono">
+                                            <i class="fa-solid fa-gauge-high"></i>
+                                            <span id="speed-label">1.0x</span>
+                                        </button>
+                                        <button onclick="toggleLoop()" id="loop-btn" class="bg-black/70 hover:bg-white/20 text-white text-xs px-2.5 py-1 rounded-md backdrop-blur transition flex items-center space-x-1">
+                                            <i class="fa-solid fa-rotate-right text-hub-orange"></i>
+                                            <span id="loop-label">BOUCLE: ON</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-2 pointer-events-auto">
+                                    <div class="w-full bg-white/30 h-1.5 rounded-full overflow-hidden cursor-pointer relative hover:h-2 transition-all">
+                                        <div id="progress-fill" class="bg-hub-orange h-full w-full relative transition-all duration-100"></div>
+                                    </div>
+
+                                    <div class="flex items-center justify-between text-white">
+                                        <div class="flex items-center space-x-4">
+                                            <button id="play-pause-btn" onclick="togglePlayPause()" class="hover:text-hub-orange transition text-xl w-8 h-8 flex items-center justify-center">
+                                                <i class="fa-solid fa-pause"></i>
+                                            </button>
+                                            <button onclick="playNextGif()" class="hover:text-hub-orange transition text-lg" title="GIF Suivant">
+                                                <i class="fa-solid fa-step-forward"></i>
+                                            </button>
+                                        </div>
+
+                                        <div class="flex items-center space-x-4">
+                                            <button onclick="copyGifUrl()" class="hover:text-hub-orange transition text-sm flex items-center space-x-1" title="Copier le lien direct">
+                                                <i class="fa-solid fa-link"></i>
+                                            </button>
+                                            <!-- Fullscreen Trigger Button -->
+                                            <button onclick="toggleFullscreen()" class="hover:text-hub-orange transition text-lg" title="Mode Plein Écran">
+                                                <i class="fa-solid fa-expand"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <h1 id="gif-title" class="text-xl sm:text-2xl font-black text-white tracking-tight">Titre du GIF...</h1>
+
+                            <div class="flex flex-wrap items-center justify-between gap-4 mt-3 pb-4 border-b border-hub-border/50">
+                                <div class="flex items-center space-x-3">
+                                    <img id="channel-avatar" src="" alt="Auteur" class="w-10 h-10 rounded-full border border-hub-border object-cover">
+                                    <div>
+                                        <div class="flex items-center space-x-1">
+                                            <span id="channel-name" class="font-bold text-white text-base hover:text-hub-orange cursor-pointer">Auteur</span>
+                                            <i class="fa-solid fa-circle-check text-hub-orange text-xs"></i>
+                                        </div>
+                                        <span id="sub-count" class="text-xs text-hub-muted">Auteur certifié GIFhub</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center space-x-2">
+                                    <!-- Like / Dislike pill -->
+                                    <div class="flex items-center bg-hub-card border border-hub-border rounded-full overflow-hidden text-xs font-bold">
+                                        <button onclick="toggleLike()" id="like-btn" class="px-3.5 py-2 hover:bg-hub-hover flex items-center space-x-1.5 transition">
+                                            <i id="like-icon" class="fa-regular fa-thumbs-up"></i>
+                                            <span id="like-count">1.4K</span>
+                                        </button>
+                                        <div class="w-px h-4 bg-hub-border"></div>
+                                        <button onclick="toggleDislike()" id="dislike-btn" class="px-3.5 py-2 hover:bg-hub-hover transition">
+                                            <i id="dislike-icon" class="fa-regular fa-thumbs-down"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Favorite Toggle -->
+                                    <button onclick="toggleCurrentFavorite()" id="favorite-btn" class="flex items-center space-x-2 bg-hub-card hover:bg-hub-hover border border-hub-border px-4 py-2 rounded-full transition text-xs font-bold">
+                                        <i id="favorite-icon" class="fa-regular fa-heart text-red-500"></i>
+                                        <span id="favorite-text">Favoris</span>
+                                    </button>
+
+                                    <!-- Share -->
+                                    <button onclick="copyGifUrl()" class="flex items-center space-x-2 bg-hub-card hover:bg-hub-hover border border-hub-border px-4 py-2 rounded-full transition text-xs font-bold">
+                                        <i class="fa-solid fa-share text-hub-orange"></i>
+                                        <span class="hidden sm:inline">Partager</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 bg-hub-card hover:bg-hub-card/80 transition rounded-2xl p-3.5 text-sm border border-hub-border/40">
+                                <div class="flex items-center space-x-2 text-xs font-bold text-hub-muted mb-1">
+                                    <span id="gif-views">1,245 vues</span>
+                                    <span>•</span>
+                                    <span id="gif-date">il y a 2 jours</span>
+                                </div>
+                                <p id="gif-desc" class="text-hub-text text-xs leading-relaxed">
+                                    Description du GIF...
+                                </p>
+                            </div>
+
+                            <!-- Interactive Comments Section -->
+                            <div class="mt-8 border-t border-hub-border/40 pt-6">
+                                <h3 class="text-lg font-bold text-white mb-4"><span id="comments-count">0</span> Commentaires</h3>
+
+                                <div class="flex items-start space-x-3 mb-6">
+                                    <div class="w-9 h-9 rounded-full bg-hub-orange text-black font-extrabold flex items-center justify-center shrink-0 text-xs">
+                                        Moi
+                                    </div>
+                                    <div class="flex-1">
+                                        <input id="comment-input" type="text" placeholder="Ajouter un commentaire..." 
+                                               class="w-full bg-transparent border-b border-hub-border focus:border-hub-orange outline-none py-1.5 text-xs text-white transition-colors"
+                                               onkeypress="handleCommentSubmit(event)">
+                                    </div>
+                                </div>
+
+                                <div id="comments-list" class="space-y-4"></div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="lg:w-[360px] shrink-0 space-y-4">
+                        <h3 class="font-bold text-white text-base pb-2 border-b border-hub-border/40">Recommandations</h3>
+                        <div id="recommended-list" class="space-y-3"></div>
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+    </div>
+
+    <div id="auth-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-hub-card border border-hub-border rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="auth-modal-title" class="text-lg font-bold text-white">Connexion</h3>
+                <button onclick="closeAuthModal()" class="text-hub-muted hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-hub-muted uppercase mb-1">Nom d'utilisateur</label>
+                    <input id="auth-username" type="text" required placeholder="Ex: Alex99" class="w-full bg-[#121212] border border-hub-border rounded-xl px-3.5 py-2 text-xs text-white outline-none focus:border-hub-orange">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-hub-muted uppercase mb-1">Mot de passe</label>
+                    <input id="auth-password" type="password" required placeholder="••••••••" class="w-full bg-[#121212] border border-hub-border rounded-xl px-3.5 py-2 text-xs text-white outline-none focus:border-hub-orange">
+                </div>
+
+                <button type="submit" id="auth-submit-btn" class="w-full py-2.5 bg-hub-orange text-black font-bold rounded-xl text-xs shadow hover:bg-amber-500 transition">
+                    Se connecter
+                </button>
+            </form>
+
+            <div class="mt-4 text-center">
+                <button onclick="toggleAuthMode()" id="auth-toggle-btn" class="text-xs text-hub-orange hover:underline font-semibold">
+                    Pas encore de compte ? S'inscrire
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="add-gif-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-hub-card border border-hub-border rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-white">Ajouter un nouveau GIF</h3>
+                <button onclick="closeAddModal()" class="text-hub-muted hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form onsubmit="handleAddGifSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-hub-muted uppercase mb-1">URL du GIF / Vidéo</label>
+                    <input id="input-gif-url" type="url" required placeholder="https://..." class="w-full bg-[#121212] border border-hub-border rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-hub-orange font-mono">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-hub-muted uppercase mb-1">Titre du GIF</label>
+                    <input id="input-gif-title" type="text" required placeholder="Mon super GIF" class="w-full bg-[#121212] border border-hub-border rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-hub-orange">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-hub-muted uppercase mb-1">Auteur</label>
+                        <input id="input-gif-author" type="text" placeholder="Auteur" class="w-full bg-[#121212] border border-hub-border rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-hub-orange">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-hub-muted uppercase mb-1">Catégorie</label>
+                        <select id="input-gif-category" class="w-full bg-[#121212] border border-hub-border rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-hub-orange">
+                            <option value="discord">Discord</option>
+                            <option value="cougarillo">Cougarillo</option>
+                            <option value="redgifs">RedGifs</option>
+                            <option value="mygifs" selected>Mes GIFs</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-3 border-t border-hub-border/40">
+                    <button type="button" onclick="closeAddModal()" class="px-4 py-2 text-xs font-bold text-hub-muted">Annuler</button>
+                    <button type="submit" class="px-5 py-2 text-xs font-bold bg-hub-orange text-black rounded-xl hover:bg-amber-500 transition">Sauvegarder</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="repair-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-hub-card border border-hub-border rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <h3 class="text-base font-bold text-white mb-2">Mettre à jour l'URL du GIF</h3>
+            <p class="text-xs text-hub-muted mb-3">Collez un nouveau lien valide pour restaurer la lecture de cette animation.</p>
+            <input id="repair-url-input" type="url" placeholder="https://..." class="w-full bg-[#121212] border border-hub-border rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-hub-orange font-mono mb-4">
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeRepairModal()" class="px-4 py-2 text-xs text-hub-muted">Annuler</button>
+                <button onclick="saveRepairedUrl()" class="px-4 py-2 text-xs bg-hub-orange text-black font-bold rounded-xl hover:bg-amber-500 transition">Mettre à jour</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Root Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <script>
+        // FULL DATASET CONTAINING ALL 35 GIFS PREVIOUSLY SUBMITTED BY THE USER
+        const baseGifs = [
+            // Discord CDN GIFs (5)
+            { id: 'gif-1', title: 'SPOILER Caption (Discord CDN)', author: 'Discord Vault', avatar: 'https://placehold.co/100x100/5865F2/ffffff?text=DC', url: 'https://cdn.discordapp.com/attachments/916031638796898315/1075208690795282492/SPOILER_caption.gif?ex=6aca2c60&is=6ac8dae0&hm=5bdfec245c93143e27dd82c0a262eca50ce435a521d4f0acd7b3ac855fdf8978', type: 'image', category: 'discord', views: '1.2M vues', date: 'il y a 2 jours', desc: 'Animation Discord CDN issue du serveur.' },
+            { id: 'gif-2', title: 'MlZJJZHi Animation', author: 'Discord Vault', avatar: 'https://placehold.co/100x100/5865F2/ffffff?text=DC', url: 'https://cdn.discordapp.com/attachments/833225337608601620/1205196478688268329/MlZJJZHi.gif?ex=6ac9c66f&is=6ac874ef&hm=d66c462991aa3b3845cb103f00bad98f39580e226c86f1c40976ac37309ea2a0', type: 'image', category: 'discord', views: '840K vues', date: 'il y a 1 semaine', desc: 'Fichier GIF stocké sur Discord.' },
+            { id: 'gif-3', title: 'FEMBOY ARMY DISCORD 1', author: 'FemboyArmy', avatar: 'https://placehold.co/100x100/5865F2/ffffff?text=DC', url: 'https://cdn.discordapp.com/attachments/1444447911109988512/1547351249580589178/FEMBOY-ARMY-DISCORD.gif?ex=6ac9fee6&is=6ac8ad66&hm=3ab7c266330822b06b1ab13db2390295805d97d5dbc8095fc67147d24b691bc9', type: 'image', category: 'discord', views: '2.1M vues', date: 'il y a 3 jours', desc: 'Séquence animée Femboy Army.' },
+            { id: 'gif-4', title: 'FEMBOY ARMY DISCORD 2', author: 'FemboyArmy', avatar: 'https://placehold.co/100x100/5865F2/ffffff?text=DC', url: 'https://cdn.discordapp.com/attachments/1444447911109988512/1534952824318726334/FEMBOY-ARMY-DISCORD.gif?ex=6ac9b6f7&is=6ac86577&hm=5994b9d1be42ddef9989c3f0103364933ee1e4d3e1dcc4fffeb8062564d2aade', type: 'image', category: 'discord', views: '950K vues', date: 'il y a 5 jours', desc: 'Seconde édition Femboy Army.' },
+            { id: 'gif-5', title: 'Gif Stealer Discord', author: 'Discord Stealer', avatar: 'https://placehold.co/100x100/5865F2/ffffff?text=DC', url: 'https://cdn.discordapp.com/attachments/1477781907709100043/1493138641818751098/gifstealer.gif?ex=6ac9ddb9&is=6ac88c39&hm=cbfae0047b636884927fd7ff51001aa966a7288430e835e82c2b0c65a6960393', type: 'image', category: 'discord', views: '510K vues', date: 'il y a 1 jour', desc: 'Animation GIF Stealer.' },
+
+            // RedGifs (1)
+            { id: 'gif-6', title: 'Beluga Whale Special (RedGifs)', author: 'RedGifs Player', avatar: 'https://placehold.co/100x100/FF2A70/ffffff?text=RG', url: 'https://www.redgifs.com/ifr/bowedvisiblebelugawhale', type: 'iframe', category: 'redgifs', views: '3.4M vues', date: 'il y a 1 mois', desc: 'Lecteur interactif embarqué RedGifs.' },
+
+            { id: 'gif-7', title: 'Blonde Hentai Gif', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2023/12/blonde-hentai.gif', type: 'image', category: 'cougarillo', views: '1.1M vues', date: 'il y a 3 mois', desc: 'Animation Cougarillo blonde hentai.' },
+            { id: 'gif-8', title: 'GIF Hentai 141', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2024/04/gif-hentai141.gif', type: 'image', category: 'cougarillo', views: '720K vues', date: 'il y a 2 mois', desc: 'Media Cougarillo 141.' },
+            { id: 'gif-9', title: 'GIF Hentai 145', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2024/04/gif-hentai145.gif', type: 'image', category: 'cougarillo', views: '890K vues', date: 'il y a 2 mois', desc: 'Media Cougarillo 145.' },
+            { id: 'gif-10', title: 'GIF Hentai 122', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2024/04/gif-hentai122.gif', type: 'image', category: 'cougarillo', views: '650K vues', date: 'il y a 2 mois', desc: 'Media Cougarillo 122.' },
+            { id: 'gif-11', title: 'GIF Hentai 137', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2024/04/gif-hentai137.gif', type: 'image', category: 'cougarillo', views: '920K vues', date: 'il y a 2 mois', desc: 'Media Cougarillo 137.' },
+            { id: 'gif-12', title: 'GIF Hentai Standard', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2023/12/gif-hentai.gif', type: 'image', category: 'cougarillo', views: '1.5M vues', date: 'il y a 4 mois', desc: 'GIF animé standard Cougarillo.' },
+            { id: 'gif-13', title: 'GIF X Hentai', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2023/12/gif-x-hentai.gif', type: 'image', category: 'cougarillo', views: '1.3M vues', date: 'il y a 4 mois', desc: 'Séquence Hentai X Cougarillo.' },
+            { id: 'gif-14', title: 'Sodomie GIF 3D', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2023/12/sodomie-gif3d.gif', type: 'image', category: 'cougarillo', views: '2.0M vues', date: 'il y a 4 mois', desc: 'Animation 3D Cougarillo.' },
+            { id: 'gif-15', title: 'Levrette GIF Hentai', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2023/12/levrette-gif-hentai.gif', type: 'image', category: 'cougarillo', views: '1.8M vues', date: 'il y a 4 mois', desc: 'Séquence Hentai Cougarillo.' },
+            { id: 'gif-16', title: 'GIF Hentai Gros Seins', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2023/12/gif-hentai-gros-seins.gif', type: 'image', category: 'cougarillo', views: '2.4M vues', date: 'il y a 4 mois', desc: 'Animation Hentai Cougarillo.' },
+            { id: 'gif-17', title: 'GIF Hentai 01', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2023/12/GIF-hentai01.gif', type: 'image', category: 'cougarillo', views: '980K vues', date: 'il y a 4 mois', desc: 'Edition Cougarillo 01.' },
+            { id: 'gif-18', title: 'GIF Hentai 04', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2023/12/GIF-hentai04.gif', type: 'image', category: 'cougarillo', views: '870K vues', date: 'il y a 4 mois', desc: 'Edition Cougarillo 04.' },
+            { id: 'gif-19', title: 'GIF Hentai X1', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2023/12/gif-hentai-x1.gif', type: 'image', category: 'cougarillo', views: '1.0M vues', date: 'il y a 4 mois', desc: 'Edition Cougarillo X1.' },
+            { id: 'gif-20', title: 'GIF Hentai 114', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2024/04/gif-hentai114.gif', type: 'image', category: 'cougarillo', views: '610K vues', date: 'il y a 1 mois', desc: 'Edition Cougarillo 114.' },
+
+            { id: 'gif-21', title: 'GIF Hentai 125', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2024/04/gif-hentai125.gif', type: 'image', category: 'cougarillo', views: '730K vues', date: 'il y a 1 mois', desc: 'Edition Cougarillo 125.' },
+            { id: 'gif-22', title: 'GIF Hentai 116', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2024/04/gif-hentai116.gif', type: 'image', category: 'cougarillo', views: '820K vues', date: 'il y a 1 mois', desc: 'Edition Cougarillo 116.' },
+            { id: 'gif-23', title: 'GIF Hentai 143', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2024/04/gif-hentai143.gif', type: 'image', category: 'cougarillo', views: '940K vues', date: 'il y a 1 mois', desc: 'Edition Cougarillo 143.' },
+            { id: 'gif-24', title: 'GIF Hentai 119', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2024/04/gif-hentai119.gif', type: 'image', category: 'cougarillo', views: '550K vues', date: 'il y a 1 mois', desc: 'Edition Cougarillo 119.' },
+            { id: 'gif-25', title: 'Hentai Cougarillo 14', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2023/12/hentai-cougarillo14.gif', type: 'image', category: 'cougarillo', views: '1.4M vues', date: 'il y a 3 mois', desc: 'Edition Cougarillo 14.' },
+            { id: 'gif-26', title: 'GIF Hentai 127', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2024/04/gif-hentai127.gif', type: 'image', category: 'cougarillo', views: '670K vues', date: 'il y a 1 mois', desc: 'Edition Cougarillo 127.' },
+            { id: 'gif-27', title: 'GIF Hentai 115', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2024/04/gif-hentai115.gif', type: 'image', category: 'cougarillo', views: '780K vues', date: 'il y a 1 mois', desc: 'Edition Cougarillo 115.' },
+            { id: 'gif-28', title: 'GIF Hentai 136', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2024/04/gif-hentai136.gif', type: 'image', category: 'cougarillo', views: '890K vues', date: 'il y a 1 mois', desc: 'Edition Cougarillo 136.' },
+            { id: 'gif-29', title: 'GIF Hentai 1', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2023/12/gif-hentai-1.gif', type: 'image', category: 'cougarillo', views: '1.2M vues', date: 'il y a 4 mois', desc: 'Edition Cougarillo 1.' },
+            { id: 'gif-30', title: 'GIF Hentai 135', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2024/04/gif-hentai135.gif', type: 'image', category: 'cougarillo', views: '910K vues', date: 'il y a 1 mois', desc: 'Edition Cougarillo 135.' },
+            { id: 'gif-31', title: 'GIF Hentai 138', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2024/04/gif-hentai138.gif', type: 'image', category: 'cougarillo', views: '830K vues', date: 'il y a 1 mois', desc: 'Edition Cougarillo 138.' },
+            { id: 'gif-32', title: 'GIF Hentai Baise', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2023/12/gif-hentai-baise.gif', type: 'image', category: 'cougarillo', views: '2.2M vues', date: 'il y a 4 mois', desc: 'Edition Cougarillo Baise.' },
+            { id: 'gif-33', title: 'GIF Hentai 142', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2024/04/gif-hentai142.gif', type: 'image', category: 'cougarillo', views: '770K vues', date: 'il y a 1 mois', desc: 'Edition Cougarillo 142.' },
+            { id: 'gif-34', title: 'GIF Hentai 126', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2024/04/gif-hentai126.gif', type: 'image', category: 'cougarillo', views: '960K vues', date: 'il y a 1 mois', desc: 'Edition Cougarillo 126.' },
+            { id: 'gif-35', title: 'GIF Hentai XXX4', author: 'Cougarillo', avatar: 'https://placehold.co/100x100/FF9900/000000?text=CG', url: 'https://www.cougarillo.com/wp-content/uploads/2023/12/gif-hentai-xxx4.gif', type: 'image', category: 'cougarillo', views: '1.7M vues', date: 'il y a 4 mois', desc: 'Edition Cougarillo XXX4.' }
+        ];
+
+        let gifList = [];
+        let currentGifId = null;
+        let activeCategory = 'all';
+        let searchQuery = '';
+        let isSidebarOpen = true;
+        let isPlaying = true;
+        let authMode = 'login';
+        let currentUser = null;
+
+        function loadDataFromStorage() {
+            // Restore user session
+            const savedUser = localStorage.getItem('gifhub_session_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                updateUserUI();
+            }
+
+            // Restore user added custom GIFs
+            const savedCustomGifs = localStorage.getItem('gifhub_custom_gifs');
+            let customGifs = savedCustomGifs ? JSON.parse(savedCustomGifs) : [];
+            gifList = [...customGifs, ...baseGifs];
+        }
+
+        function saveCustomGif(newGif) {
+            const savedCustomGifs = localStorage.getItem('gifhub_custom_gifs');
+            let customGifs = savedCustomGifs ? JSON.parse(savedCustomGifs) : [];
+            customGifs.unshift(newGif);
+            localStorage.setItem('gifhub_custom_gifs', JSON.stringify(customGifs));
+            loadDataFromStorage();
+        }
+
+        function getFavorites() {
+            if (!currentUser) return [];
+            const favs = localStorage.getItem(`gifhub_favs_${currentUser.username}`);
+            return favs ? JSON.parse(favs) : [];
+        }
+
+        function toggleFavorite(gifId) {
+            if (!currentUser) {
+                showToast('Connectez-vous pour ajouter aux favoris');
+                openAuthModal('login');
+                return;
+            }
+            let favs = getFavorites();
+            if (favs.includes(gifId)) {
+                favs = favs.filter(id => id !== gifId);
+                showToast('Retiré des favoris');
+            } else {
+                favs.push(gifId);
+                showToast('Ajouté aux favoris !');
+            }
+            localStorage.setItem(`gifhub_favs_${currentUser.username}`, JSON.stringify(favs));
+            updateFavoriteBtnUI();
+            updateFavBadge();
+        }
+
+        function updateFavBadge() {
+            const badge = document.getElementById('fav-count-badge');
+            if (badge) badge.textContent = getFavorites().length;
+        }
+
+        function openAuthModal(mode) {
+            authMode = mode;
+            document.getElementById('auth-modal-title').textContent = mode === 'login' ? 'Connexion' : 'Créer un compte';
+            document.getElementById('auth-submit-btn').textContent = mode === 'login' ? 'Se connecter' : 'S\'inscrire';
+            document.getElementById('auth-toggle-btn').textContent = mode === 'login' ? 'Pas encore de compte ? S\'inscrire' : 'Déjà un compte ? Se connecter';
+            document.getElementById('auth-modal').classList.remove('hidden');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('auth-modal').classList.add('hidden');
+        }
+
+        function toggleAuthMode() {
+            openAuthModal(authMode === 'login' ? 'register' : 'login');
+        }
+
+        function handleAuthSubmit(e) {
+            e.preventDefault();
+            const username = document.getElementById('auth-username').value.trim();
+            if (!username) return;
+
+            const users = JSON.parse(localStorage.getItem('gifhub_registered_users') || '[]');
+
+            if (authMode === 'register') {
+                if (users.find(u => u.username.toLowerCase() === username.toLowerCase())) {
+                    showToast('Ce nom d\'utilisateur est déjà pris');
+                    return;
+                }
+                const newUser = { username: username, email: `${username.toLowerCase()}@gifhub.com` };
+                users.push(newUser);
+                localStorage.setItem('gifhub_registered_users', JSON.stringify(users));
+                currentUser = newUser;
+                showToast('Compte créé avec succès !');
+            } else {
+                const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+                currentUser = user || { username: username, email: `${username.toLowerCase()}@gifhub.com` };
+                showToast(`Bienvenue, ${currentUser.username} !`);
+            }
+
+            localStorage.setItem('gifhub_session_user', JSON.stringify(currentUser));
+            updateUserUI();
+            closeAuthModal();
+            renderHomeGrid();
+        }
+
+        function logoutUser() {
+            currentUser = null;
+            localStorage.removeItem('gifhub_session_user');
+            updateUserUI();
+            showToast('Déconnexion effectuée');
+            renderHomeGrid();
+        }
+
+        function updateUserUI() {
+            const authContainer = document.getElementById('auth-buttons-container');
+            const profileContainer = document.getElementById('user-profile-container');
+
+            if (currentUser) {
+                authContainer.classList.add('hidden');
+                profileContainer.classList.remove('hidden');
+                document.getElementById('user-avatar-text').textContent = currentUser.username.substring(0, 2).toUpperCase();
+                document.getElementById('dropdown-username').textContent = currentUser.username;
+                document.getElementById('dropdown-email').textContent = currentUser.email;
+                updateFavBadge();
+            } else {
+                authContainer.classList.remove('hidden');
+                profileContainer.classList.add('hidden');
+            }
+        }
+
+        function toggleUserMenu() {
+            document.getElementById('user-dropdown').classList.toggle('hidden');
+        }
+
+        function renderHomeGrid() {
+            const grid = document.getElementById('home-grid');
+            const emptyState = document.getElementById('empty-state');
+            grid.innerHTML = '';
+
+            const favs = getFavorites();
+
+            let filtered = gifList.filter(gif => {
+                let matchesCategory = true;
+                if (activeCategory === 'favorites') {
+                    matchesCategory = favs.includes(gif.id);
+                } else if (activeCategory === 'mygifs') {
+                    matchesCategory = gif.id.startsWith('custom-');
+                } else if (activeCategory !== 'all') {
+                    matchesCategory = (gif.category === activeCategory);
+                }
+
+                const matchesSearch = searchQuery === '' || 
+                    gif.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                    gif.author.toLowerCase().includes(searchQuery.toLowerCase());
+
+                return matchesCategory && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                grid.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                grid.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+            }
+
+            filtered.forEach(gif => {
+                const isFav = favs.includes(gif.id);
+                const card = document.createElement('div');
+                card.className = 'flex flex-col space-y-2.5 cursor-pointer group animate-fade-in relative';
+                card.onclick = () => openWatchView(gif.id);
+
+                const thumbSrc = gif.type === 'iframe' 
+                    ? 'https://placehold.co/600x337/ff2a70/ffffff?text=RedGifs+Embed' 
+                    : gif.url;
+
+                card.innerHTML = `
+                    <div class="relative aspect-video bg-black rounded-2xl overflow-hidden border border-hub-border/30 group-hover:border-hub-orange/60 transition-all shadow-md group-hover:shadow-xl">
+                        <img src="${thumbSrc}" alt="${gif.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.src='https://placehold.co/600x337/1e1f22/ffffff?text=GIF'">
+                        <span class="absolute bottom-2 right-2 bg-black/80 backdrop-blur text-white font-mono font-bold text-[10px] px-2 py-0.5 rounded-md uppercase tracking-wider">
+                            ${gif.type === 'iframe' ? 'EMBED' : 'GIF'}
+                        </span>
+                        <button onclick="event.stopPropagation(); toggleFavorite('${gif.id}'); renderHomeGrid();" class="absolute top-2 right-2 p-2 bg-black/60 rounded-full hover:scale-110 transition backdrop-blur">
+                            <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart text-red-500 text-xs"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex space-x-3 items-start px-1">
+                        <img src="${gif.avatar}" alt="${gif.author}" class="w-9 h-9 rounded-full object-cover shrink-0 border border-hub-border/50">
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-sm font-bold text-white leading-snug line-clamp-2 group-hover:text-hub-orange transition-colors">${gif.title}</h3>
+                            <p class="text-xs text-hub-muted mt-0.5 truncate">${gif.author}</p>
+                            <p class="text-[10px] text-hub-muted/80">${gif.views} • ${gif.date}</p>
+                        </div>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        function openWatchView(gifId) {
+            const gif = gifList.find(g => g.id === gifId);
+            if (!gif) return;
+
+            currentGifId = gifId;
+            isPlaying = true;
+
+            document.getElementById('home-view').classList.add('hidden');
+            document.getElementById('watch-view').classList.remove('hidden');
+            document.getElementById('current-gif-id-tag').textContent = `ID: ${gif.id}`;
+
+            const mainImg = document.getElementById('main-gif-element');
+            const mainIframe = document.getElementById('main-iframe-element');
+            const pauseCanvas = document.getElementById('pause-canvas');
+            const errorOverlay = document.getElementById('player-error');
+
+            pauseCanvas.classList.add('hidden');
+            errorOverlay.classList.add('hidden');
+
+            if (gif.type === 'iframe') {
+                mainImg.classList.add('hidden');
+                mainIframe.classList.remove('hidden');
+                mainIframe.src = gif.url;
+            } else {
+                mainIframe.classList.add('hidden');
+                mainIframe.src = '';
+                mainImg.classList.remove('hidden');
+
+                mainImg.onerror = () => errorOverlay.classList.remove('hidden');
+                mainImg.onload = () => errorOverlay.classList.add('hidden');
+                mainImg.src = gif.url;
+            }
+
+            document.getElementById('gif-title').textContent = gif.title;
+            document.getElementById('channel-name').textContent = gif.author || 'Inconnu';
+            document.getElementById('channel-avatar').src = gif.avatar;
+            document.getElementById('gif-views').textContent = gif.views;
+            document.getElementById('gif-date').textContent = gif.date;
+            document.getElementById('gif-desc').textContent = gif.desc;
+
+            updateFavoriteBtnUI();
+            renderComments();
+            renderRecommendations();
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleFullscreen() {
+            const container = document.getElementById('player-container');
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                if (container.requestFullscreen) {
+                    container.requestFullscreen();
+                } else if (container.webkitRequestFullscreen) {
+                    container.webkitRequestFullscreen();
+                }
+                showToast('Mode Plein écran');
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+            }
+        }
+
+        function togglePlayPause() {
+            const mainImg = document.getElementById('main-gif-element');
+            const pauseCanvas = document.getElementById('pause-canvas');
+            const playBtn = document.getElementById('play-pause-btn');
+
+            if (isPlaying) {
+                try {
+                    pauseCanvas.width = mainImg.naturalWidth || 800;
+                    pauseCanvas.height = mainImg.naturalHeight || 450;
+                    const ctx = pauseCanvas.getContext('2d');
+                    ctx.drawImage(mainImg, 0, 0, pauseCanvas.width, pauseCanvas.height);
+                    pauseCanvas.classList.remove('hidden');
+                    mainImg.classList.add('hidden');
+                } catch(e) {
+                    mainImg.style.opacity = '0.3';
+                }
+                playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+                isPlaying = false;
+            } else {
+                pauseCanvas.classList.add('hidden');
+                mainImg.classList.remove('hidden');
+                mainImg.style.opacity = '1';
+                playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+                isPlaying = true;
+            }
+        }
+
+        function playNextGif() {
+            const currentIndex = gifList.findIndex(g => g.id === currentGifId);
+            const nextIndex = (currentIndex + 1) % gifList.length;
+            openWatchView(gifList[nextIndex].id);
+        }
+
+        function copyGifUrl() {
+            const gif = gifList.find(g => g.id === currentGifId);
+            if (!gif) return;
+            const tempInput = document.createElement('input');
+            tempInput.value = gif.url;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            showToast('Lien direct copié dans le presse-papier !');
+        }
+
+        function updateFavoriteBtnUI() {
+            const favs = getFavorites();
+            const isFav = favs.includes(currentGifId);
+            const icon = document.getElementById('favorite-icon');
+            const text = document.getElementById('favorite-text');
+
+            if (isFav) {
+                icon.className = 'fa-solid fa-heart text-red-500 text-sm';
+                text.textContent = 'Favori enregistré';
+            } else {
+                icon.className = 'fa-regular fa-heart text-red-500 text-sm';
+                text.textContent = 'Ajouter aux Favoris';
+            }
+        }
+
+        function toggleCurrentFavorite() {
+            if (currentGifId) toggleFavorite(currentGifId);
+        }
+
+        function showHomeView() {
+            document.getElementById('watch-view').classList.add('hidden');
+            document.getElementById('home-view').classList.remove('hidden');
+            document.getElementById('main-iframe-element').src = '';
+            renderHomeGrid();
+        }
+
+        function filterCategory(cat) {
+            activeCategory = cat;
+            ['all', 'favorites', 'discord', 'cougarillo', 'redgifs', 'mygifs'].forEach(c => {
+                const btn = document.getElementById(`chip-${c}`);
+                if (btn) {
+                    btn.className = c === cat 
+                        ? 'bg-white text-black px-3.5 py-1.5 rounded-lg text-xs font-bold shrink-0 transition'
+                        : 'bg-[#222222] hover:bg-hub-hover text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition';
+                }
+            });
+            renderHomeGrid();
+        }
+
+        function showCategory(cat) {
+            showHomeView();
+            filterCategory(cat);
+        }
+
+        function handleSearchInput(e) {
+            searchQuery = e.target.value.trim();
+            document.getElementById('clear-search-btn').classList.toggle('hidden', searchQuery === '');
+            if (e.key === 'Enter') triggerSearch();
+        }
+
+        function clearSearch() {
+            document.getElementById('search-input').value = '';
+            searchQuery = '';
+            document.getElementById('clear-search-btn').classList.add('hidden');
+            triggerSearch();
+        }
+
+        function triggerSearch() {
+            showHomeView();
+            renderHomeGrid();
+        }
+
+        function openAddModal() { document.getElementById('add-gif-modal').classList.remove('hidden'); }
+        function closeAddModal() { document.getElementById('add-gif-modal').classList.add('hidden'); }
+
+        function handleAddGifSubmit(e) {
+            e.preventDefault();
+            const url = document.getElementById('input-gif-url').value.trim();
+            const title = document.getElementById('input-gif-title').value.trim();
+            const author = document.getElementById('input-gif-author').value.trim() || (currentUser ? currentUser.username : 'Créateur Anonyme');
+            const category = document.getElementById('input-gif-category').value;
+
+            const isRedGifs = url.includes('redgifs.com');
+            const embedUrl = isRedGifs && !url.includes('/ifr/') ? url.replace('/watch/', '/ifr/') : url;
+
+            const newGif = {
+                id: 'custom-' + Date.now(),
+                title: title,
+                author: author,
+                avatar: `https://placehold.co/100x100/FF9900/000000?text=${author.substring(0,2).toUpperCase()}`,
+                url: embedUrl,
+                type: isRedGifs ? 'iframe' : 'image',
+                views: '1 vue',
+                date: "À l'instant",
+                desc: 'GIF personnalisé ajouté par l\'utilisateur.',
+                category: category
+            };
+
+            saveCustomGif(newGif);
+            closeAddModal();
+            showToast('Nouveau GIF sauvegardé dans le stockage !');
+            openWatchView(newGif.id);
+        }
+
+        function openRepairModal() { document.getElementById('repair-modal').classList.remove('hidden'); }
+        function closeRepairModal() { document.getElementById('repair-modal').classList.add('hidden'); }
+
+        function saveRepairedUrl() {
+            const newUrl = document.getElementById('repair-url-input').value.trim();
+            if (!newUrl) return;
+
+            const current = gifList.find(g => g.id === currentGifId);
+            if (current) {
+                current.url = newUrl;
+                closeRepairModal();
+                openWatchView(current.id);
+                showToast('URL du GIF mise à jour !');
+            }
+        }
+
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'bg-hub-card border border-hub-border text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-2 animate-fade-in';
+            toast.innerHTML = `<div class="w-2.5 h-2.5 rounded-full bg-hub-orange"></div><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3200);
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('main-sidebar');
+            const main = document.getElementById('main-content');
+            isSidebarOpen = !isSidebarOpen;
+            sidebar.classList.toggle('-translate-x-full');
+            main.classList.toggle('ml-56');
+        }
+
+        function renderComments() {
+            const list = document.getElementById('comments-list');
+            const countTag = document.getElementById('comments-count');
+            const commentsKey = `gifhub_comments_${currentGifId}`;
+            const comments = JSON.parse(localStorage.getItem(commentsKey) || '[]');
+
+            countTag.textContent = comments.length;
+
+            if (comments.length === 0) {
+                list.innerHTML = `<p class="text-xs text-hub-muted">Soyez le premier à commenter ce GIF !</p>`;
+                return;
+            }
+
+            list.innerHTML = '';
+            comments.forEach(c => {
+                const item = document.createElement('div');
+                item.className = 'flex items-start space-x-3 text-xs';
+                item.innerHTML = `
+                    <div class="w-8 h-8 rounded-full bg-hub-card border border-hub-border text-white font-bold flex items-center justify-center shrink-0">
+                        ${c.author.substring(0,2).toUpperCase()}
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-2">
+                            <span class="font-bold text-white">${c.author}</span>
+                            <span class="text-[10px] text-hub-muted">${c.date}</span>
+                        </div>
+                        <p class="text-hub-muted mt-0.5">${c.text}</p>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function handleCommentSubmit(e) {
+            if (e.key !== 'Enter') return;
+            const input = document.getElementById('comment-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const author = currentUser ? currentUser.username : 'Visiteur Anonyme';
+            const commentsKey = `gifhub_comments_${currentGifId}`;
+            const comments = JSON.parse(localStorage.getItem(commentsKey) || '[]');
+
+            comments.unshift({
+                author: author,
+                text: text,
+                date: "À l'instant"
+            });
+
+            localStorage.setItem(commentsKey, JSON.stringify(comments));
+            input.value = '';
+            renderComments();
+            showToast('Commentaire publié !');
+        }
+
+        function renderRecommendations() {
+            const container = document.getElementById('recommended-list');
+            container.innerHTML = '';
+            gifList.filter(g => g.id !== currentGifId).slice(0, 8).forEach(gif => {
+                const card = document.createElement('div');
+                card.className = 'flex space-x-3 p-2 rounded-xl cursor-pointer hover:bg-hub-card transition group';
+                card.onclick = () => openWatchView(gif.id);
+                card.innerHTML = `
+                    <div class="relative w-32 aspect-video bg-black rounded-lg overflow-hidden shrink-0">
+                        <img src="${gif.type === 'iframe' ? 'https://placehold.co/320x180/ff2a70/ffffff?text=Embed' : gif.url}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="text-xs font-bold text-white line-clamp-2 leading-tight group-hover:text-hub-orange transition-colors">${gif.title}</h4>
+                        <p class="text-[10px] text-hub-muted mt-1 truncate">${gif.author}</p>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Initialize application on page load
+        window.onload = function() {
+            loadDataFromStorage();
+            renderHomeGrid();
+        };
+    </script>
+</body>
+</html>
