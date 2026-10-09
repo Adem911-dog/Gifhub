@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GIFhub - Plateforme YouTube de GIFs</title>
     
-    <!-- Favicon corrigé -->
+    <!-- Favicon -->
     <link rel="icon" type="image/png" href="favicon.png">
 
     <!-- Tailwind CSS CDN -->
@@ -80,6 +80,36 @@
     </style>
 </head>
 <body class="bg-hub-dark text-white min-h-screen flex flex-col select-none">
+
+    <!-- DISCLAIMER / AGE VERIFICATION MODAL -->
+    <div id="age-modal" class="fixed inset-0 bg-black/95 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+        <div class="bg-hub-card border border-hub-border rounded-3xl w-full max-w-md p-8 shadow-2xl text-center space-y-6 animate-fade-in">
+            <!-- Logo GIFhub dans le disclaimer -->
+            <div class="flex justify-center items-center select-none">
+                <span class="text-white font-black text-3xl tracking-tighter leading-none">gif</span>
+                <span class="bg-hub-orange text-black font-black text-2xl px-2.5 py-0.5 rounded-xl tracking-tight leading-none ml-1 shadow-lg">hub</span>
+            </div>
+
+            <div class="space-y-2">
+                <h2 class="text-xl font-black text-white tracking-tight">Accès restreint</h2>
+                <p class="text-xs text-hub-muted leading-relaxed">
+                    Ce site contient des contenus réservés à un public averti. Veuillez confirmer votre âge pour continuer.
+                </p>
+            </div>
+
+            <div class="pt-2">
+                <p class="text-sm font-bold text-white mb-6">As-tu 18 ans ou plus ?</p>
+                <div class="flex gap-4">
+                    <button onclick="confirmAge(false)" class="flex-1 py-3 bg-[#222222] hover:bg-hub-hover border border-hub-border text-white font-bold rounded-2xl text-xs transition">
+                        Non
+                    </button>
+                    <button onclick="confirmAge(true)" class="flex-1 py-3 bg-hub-orange hover:bg-amber-500 text-black font-extrabold rounded-2xl text-xs shadow-lg transition scale-105">
+                        Oui, j'ai 18 ans ou plus
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <header class="fixed top-0 left-0 right-0 h-14 bg-hub-dark/95 backdrop-blur-md z-50 flex items-center justify-between px-3 md:px-5 border-b border-hub-border/40">
         <!-- Sidebar Menu Toggle & Official GIFhub Logo -->
@@ -498,7 +528,6 @@
 
     <script>
         const baseGifs = [
-            // Épisodes et vidéos personnalisées (IDs 36 à 42)
             { id: 'gif-36', title: 'Overflow vostfr ep 1', author: 'Sendvid', avatar: 'https://placehold.co/100x100/FF9900/000000?text=OV', url: 'https://sendvid.com/embed/o8lbm1jq', type: 'iframe', category: 'mygifs', views: '1K vues', date: "Il y a 1 an", desc: 'Overflow VOSTFR Épisode 1' },
             { id: 'gif-37', title: 'Busty Blonde Loves Having Her Pussy Filled With Cum', author: 'Redtube', avatar: 'https://placehold.co/100x100/FF9900/000000?text=RT', url: 'https://embed.redtube.com/?id=226029831', type: 'iframe', category: 'mygifs', views: '1M vues', date: "Il y a 11 mois", desc: 'Busty Blonde Loves Having Her Pussy Filled With Cum' },
             { id: 'gif-38', title: 'Fucked his girlfriend at a party POV dutch hentai, schoolgirl stepmom, celebrity polish', author: 'Redtube', avatar: 'https://placehold.co/100x100/FF9900/000000?text=RT', url: 'https://embed.redtube.com/?id=41662351', type: 'iframe', category: 'mygifs', views: '1 vue', date: "À l'instant", desc: 'Fucked his girlfriend at a party POV dutch hentai, schoolgirl stepmom, celebrity polish' },
@@ -557,6 +586,24 @@
         let isPlaying = true;
         let authMode = 'login';
         let currentUser = null;
+
+        function confirmAge(isAdult) {
+            if (isAdult) {
+                localStorage.setItem('gifhub_age_verified', 'true');
+                document.getElementById('age-modal').classList.add('hidden');
+            } else {
+                window.location.href = 'https://www.google.com';
+            }
+        }
+
+        function checkAgeVerification() {
+            const verified = localStorage.getItem('gifhub_age_verified');
+            if (verified === 'true') {
+                document.getElementById('age-modal').classList.add('hidden');
+            } else {
+                document.getElementById('age-modal').classList.remove('hidden');
+            }
+        }
 
         function loadDataFromStorage() {
             const savedUser = localStorage.getItem('gifhub_session_user');
@@ -1068,6 +1115,7 @@
 
         // Initialize application on page load
         window.onload = function() {
+            checkAgeVerification();
             loadDataFromStorage();
             renderHomeGrid();
         };
