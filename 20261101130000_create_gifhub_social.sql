@@ -1,0 +1,27 @@
+CREATE TABLE IF NOT EXISTS profiles (
+ user_id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, avatar_url TEXT, banner_url TEXT,
+ bio TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS videos (
+ id BIGSERIAL PRIMARY KEY, user_id TEXT NOT NULL REFERENCES profiles(user_id) ON DELETE CASCADE,
+ title TEXT NOT NULL, description TEXT NOT NULL DEFAULT '', cloudinary_public_id TEXT NOT NULL,
+ video_url TEXT NOT NULL, thumbnail_url TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS video_likes (
+ video_id BIGINT REFERENCES videos(id) ON DELETE CASCADE, user_id TEXT REFERENCES profiles(user_id) ON DELETE CASCADE,
+ created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY(video_id,user_id)
+);
+CREATE TABLE IF NOT EXISTS video_favorites (
+ video_id BIGINT REFERENCES videos(id) ON DELETE CASCADE, user_id TEXT REFERENCES profiles(user_id) ON DELETE CASCADE,
+ created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY(video_id,user_id)
+);
+CREATE TABLE IF NOT EXISTS video_comments (
+ id BIGSERIAL PRIMARY KEY, video_id BIGINT REFERENCES videos(id) ON DELETE CASCADE,
+ user_id TEXT REFERENCES profiles(user_id) ON DELETE CASCADE,
+ body TEXT NOT NULL CHECK(char_length(body) BETWEEN 1 AND 2000), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS video_views (
+ id BIGSERIAL PRIMARY KEY, video_id BIGINT REFERENCES videos(id) ON DELETE CASCADE,
+ viewer_key TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), UNIQUE(video_id,viewer_key)
+);
+CREATE INDEX IF NOT EXISTS videos_created_at_idx ON videos(created_at DESC);

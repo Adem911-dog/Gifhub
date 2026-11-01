@@ -1,0 +1,8 @@
+{
+  "name": "gifhub",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@netlify/database": "^1.0.0"
+  }
+}
