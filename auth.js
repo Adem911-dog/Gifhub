@@ -1,7 +1,12 @@
 
 (async function () {
     "use strict";
+    const emailField = document.getElementById("auth-username");
 
+if (emailField) {
+    emailField.type = "email";
+    emailField.placeholder = "Ton adresse e-mail";
+}
     // ==========================================
     // GIFHUB - AUTHENTIFICATION NETLIFY IDENTITY
     // ==========================================
