@@ -1,0 +1,11 @@
+# Baseline security headers for GIFhub on Netlify.
+# This intentionally does not set Content-Security-Policy yet:
+# the site's inline scripts and external CDN dependencies need review first.
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "DENY"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
